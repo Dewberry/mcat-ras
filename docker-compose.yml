@@ -8,7 +8,27 @@ services:
       context: ./
     volumes:
       - ./:/app
+      - /mnt/p/02/NY/Broome_Co_36007C/LAMP/DELIVERABLES/MODELS/Hydraulics:/models
     ports:
       - 5600:5600
+    networks:
+      - mcat-local
     env_file:
       - ./.env
+
+  mcat-pgdb:
+      image: kartoza/postgis:13.0
+      container_name: mcat-pgdb
+      networks:
+        - mcat-local
+      ports:
+        - "5432:5432"
+      volumes:
+        - ./mcat-local-db:/var/lib/postgresql
+      environment:
+        - ALLOW_IP_RANGE=0.0.0.0/0
+      restart: on-failure
+
+networks:
+    mcat-local:
+        driver: bridge

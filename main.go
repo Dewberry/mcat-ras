@@ -41,5 +41,6 @@ func main() {
 	e.POST("/refresh", pgdb.RefreshRasViews(dbConfig))
 	e.POST("/vacuum", pgdb.VacuumRasViews(dbConfig))
 
+	go config.CSI.Init()
 	e.Logger.Fatal(e.Start(appConfig.Address()))
 }

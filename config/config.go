@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/USACE/filestore"
 )
@@ -24,7 +25,7 @@ func Init() *APIConfig {
 	config := new(APIConfig)
 	config.Host = "" // 0.0.0.0
 	config.Port = 5600
-	config.FileStore = FileStoreInit(false)
+	config.FileStore = FileStoreInit(true)
 	config.DestinationCRS = 4326
 	return config
 }
@@ -54,4 +55,30 @@ func FileStoreInit(local bool) *filestore.FileStore {
 		}
 	}
 	return &fs
+}
+
+type CSILOGO string
+
+var CSI CSILOGO = `
+------------------------------------------------------------------------
+    ____               __                               ___________ ____
+   / __ \___ _      __/ /_  ___  ____________  __      / ____/ ___//  _/
+  / / / / _ \ | /| / / __ \/ _ \/ ___/ ___/ / / /_____/ /    \__ \ / /  
+ / /_/ /  __/ |/ |/ / /_/ /  __/ /  / /  / /_/ /_____/ /___ ___/ // /   
+/_____/\___/|__/|__/_.___/\___/_/  /_/   \__, /      \____//____/___/   
+                                        /____/                          
+-----------------------------------------------------------------------`
+
+func (c CSILOGO) Init() {
+	time.Sleep(250 * time.Millisecond)
+	fmt.Println(c)
+}
+
+func Contains(slc []string, str string) bool {
+	for _, s := range slc {
+		if str == s {
+			return true
+		}
+	}
+	return false
 }
