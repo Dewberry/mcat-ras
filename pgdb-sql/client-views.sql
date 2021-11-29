@@ -17,7 +17,7 @@ FROM
 		i."source" AS col_5,
 		r.s3_key AS s3_key
 			
-	 FROM ras_project_metadata t
+	 FROM models.ras_project_metadata t
 	 JOIN models.model r ON r.model_inventory_id = t.model_inventory_id
 	 JOIN inventory.collections i ON i.collection_id = t.collection 
 	) squery;
@@ -48,7 +48,7 @@ FROM
 		t."version" AS col_6, 
 		r.s3_key AS s3_key
 			
-	 FROM ras_plan_metadata t
+	 FROM models.ras_plan_metadata t
 	 JOIN models.model r ON r.model_inventory_id = t.model_inventory_id
 	 LEFT JOIN models.ras_geometry_metadata rgm 
 	 	ON rgm.model_inventory_id = t.model_inventory_id
@@ -60,8 +60,7 @@ FROM
 
 -- DROP VIEW models.ras_flow_files;
 CREATE OR REPLACE VIEW models.ras_flow_files AS 
-
-	SELECT  squery.col_1 AS "1. Flow Title",
+SELECT  squery.col_1 AS "1. Flow Title",
 	 		squery.col_2 AS "2. Simulation File",
 	 		squery.col_3 AS "3. Type", 
 	 		squery.col_4 AS "4. Profiles",
@@ -73,11 +72,9 @@ CREATE OR REPLACE VIEW models.ras_flow_files AS
 			t.flow_title AS col_1, 
 			t.file_ext AS col_2,
 		    CASE
-
-            -- update tjios!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	           WHEN t.file_ext IS NOT NULL THEN 'Steady'
-	           WHEN t.file_ext IS NOT NULL THEN 'Unsteady'
-	           WHEN t.file_ext IS NOT NULL THEN 'Quasi-Steady'
+	           WHEN t.file_ext LIKE '.f%' THEN 'Steady'
+	           WHEN t.file_ext LIKE '.u%'  THEN 'Unsteady'
+	           WHEN t.file_ext LIKE '.q%'  THEN 'Quasi-Steady'
 		     END col_3,
 		     
 			t.num_profiles AS col_4, 
@@ -85,7 +82,7 @@ CREATE OR REPLACE VIEW models.ras_flow_files AS
 			t."version" AS col_6, 
 			r.s3_key AS s3_key
 				
-		 FROM ras_flow_metadata t
+		 FROM models.ras_flow_metadata t
 		 JOIN models.model r ON r.model_inventory_id = t.model_inventory_id
 		) squery;
 
