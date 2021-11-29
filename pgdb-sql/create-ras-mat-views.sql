@@ -119,3 +119,92 @@ INNER JOIN models.ras_geometry_files AS geom_files USING (geometry_file_id)
 INNER JOIN models.model AS ras USING (model_inventory_id)
 GROUP BY ras.model_inventory_id
 WITH DATA;
+
+-- RAS Summary Table
+CREATE MATERIALIZED VIEW models.ras_current_plan_summary AS
+    SELECT model_inventory_id, title, collection_description, source, model_name,
+        reach_name, river_name,
+        plan_file,current_plan, plan_flow_file, plan_geom_file,
+        plan_model_version, flow_model_version, geometry_model_version,
+        plan_title, plan_description
+        geom_title, geom_description, 
+        flow_title, n_profiles, profile_names,
+        n_cross_sections, n_culverts, num_bridges, num_inline_wiers,files_link,map_link
+
+    FROM (
+        SELECT c.title as title, m.name as model_name, c.source, c.description as collection_description, m.model_inventory_id,
+            json_array_elements(model_metadata -> 'PlanFiles') ->> 'ProgramVersion' as plan_model_version,
+            json_array_elements(model_metadata -> 'PlanFiles') ->> 'FileExt' as plan_file,
+            '.' ||  (model_metadata -> 'ProjFileContents' ->> 'CurrentPlan') as current_plan,
+            json_array_elements(model_metadata -> 'PlanFiles') ->> 'PlanTitle' as plan_title,
+            json_array_elements(model_metadata -> 'PlanFiles') ->> 'Description' as plan_description,
+            'https://floodplanning.org/file_explorer?s3_prefix='  || (model_metadata ->> 'ProjFilePath')::text as files_link,
+            'https://floodplanning.org/map?definition_file=' || (model_metadata ->> 'ProjFilePath')::text as map_link,
+            '.' || (json_array_elements(model_metadata -> 'PlanFiles') ->> 'GeomFile')::text as plan_geom_file,
+            '.' || (json_array_elements(model_metadata -> 'PlanFiles') ->> 'FlowFile')::text as plan_flow_file
+
+        FROM models.model m           
+        JOIN inventory.collections c using(collection_id) 
+        WHERE m.type = 'RAS'
+        AND m.model_metadata ->> 'PlanFiles' != 'null' 
+        AND m.model_metadata ->> 'ProjFileContents'  != 'null' 
+        
+    )  plan
+
+    JOIN (
+        SELECT m.model_inventory_id,
+            json_array_elements(model_metadata -> 'FlowFiles') ->> 'ProgramVersion' as flow_model_version,
+            json_array_elements(model_metadata -> 'FlowFiles') ->> 'FileExt' as plan_flow_file,
+            json_array_elements(model_metadata -> 'FlowFiles') ->> 'FlowTitle' as flow_title,
+            json_array_elements(model_metadata -> 'FlowFiles') ->> 'NProfiles' as n_profiles,
+            json_array_elements(model_metadata -> 'FlowFiles') ->> 'ProfileNames' as profile_names
+        FROM models.model m           
+        JOIN inventory.collections c using(collection_id) 
+        WHERE m.type = 'RAS'
+        AND m.model_metadata ->> 'FlowFiles' != 'null' 
+
+    ) flow USING(model_inventory_id, plan_flow_file)
+
+    JOIN (
+        WITH query_1 AS (
+                    SELECT 
+                        model_inventory_id, 
+                        model_metadata ->> 'GeomFiles' as geom_files
+                    FROM models.model m
+                    ORDER BY model_inventory_id
+        ),
+            query_2 AS
+            (
+                SELECT 
+                    model_inventory_id, 
+                    json_array_elements(geom_files::json) ->> 'Program Version' as geometry_model_version,
+                    json_array_elements(geom_files::json) ->>  'File Extension' as plan_geom_file,
+                    json_array_elements(geom_files::json) ->> 'Geom Title' as geom_title,
+                    json_array_elements(geom_files::json) ->> 'Description' as geom_description,
+                    json_array_elements(geom_files::json) ->>'Hydraulic Structures' as structs
+
+                FROM query_1
+                WHERE query_1.geom_files is not null
+                ORDER BY model_inventory_id
+            )
+            SELECT
+                model_inventory_id,
+                geometry_model_version,
+                plan_geom_file,
+                geom_title,
+                geom_description,
+                json_array_elements(structs::json) -> 'Inline Weir Data' ->> 'Num Inline Weirs' as num_inline_wiers,
+                json_array_elements(structs::json) -> 'Culvert Data' ->> 'Num Culverts' as n_culverts,
+                json_array_elements(structs::json) -> 'Bridge Data' ->> 'Num Bridges' as num_bridges,
+                json_array_elements(structs::json) ->> 'Num CrossSections' as n_cross_sections,
+                json_array_elements(structs::json) ->> 'Reach Name' as reach_name,
+                json_array_elements(structs::json) ->> 'River Name' as river_name
+            FROM query_2
+            WHERE structs is not null
+            ORDER BY model_inventory_id, geometry_model_version
+
+    ) geometry 
+
+    USING(model_inventory_id, plan_geom_file)
+    WHERE plan_file = current_plan
+    ORDER BY model_inventory_id;
