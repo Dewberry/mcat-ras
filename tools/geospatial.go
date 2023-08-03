@@ -27,6 +27,7 @@ type Features struct {
 	Banks               []VectorFeature
 	StorageAreas        []VectorFeature
 	TwoDAreas           []VectorFeature
+	Mesh                []VectorFeature
 	HydraulicStructures []VectorFeature
 	Connections         []VectorFeature
 	BCLines             []VectorFeature
@@ -365,6 +366,34 @@ func getArea(sc *bufio.Scanner, transform gdal.CoordinateTransform) (VectorFeatu
 	return feature, is2D, nil
 }
 
+func getMeshArea(sc *bufio.Scanner, transform gdal.CoordinateTransform) (VectorFeature, error) {
+	feature := VectorFeature{FeatureName: strings.TrimSpace(strings.Split(rightofEquals(sc.Text()), ",")[0])}
+
+	xyPairs, err := getDataPairsfromTextBlock("Storage Area 2D Points=", sc, 64, 16)
+	if err != nil {
+		return feature, errors.Wrap(err, 0)
+	}
+
+	fmt.Println(len(xyPairs))
+	xyLineString := gdal.Create(gdal.GT_LineString)
+	for _, pair := range xyPairs {
+		xyLineString.AddPoint2D(pair[0], pair[1])
+	}
+
+	xyLineString.Transform(transform)
+	// This is a temporary fix since the x and y values need to be flipped:
+	yxLineString := flipXYLineString(xyLineString)
+
+	multiLineString := yxLineString.ForceToMultiLineString()
+
+	wkb, err := multiLineString.ToWKB()
+	if err != nil {
+		return feature, errors.Wrap(err, 0)
+	}
+	feature.Geometry = wkb
+	return feature, nil
+}
+
 func getAreaType(sc *bufio.Scanner) (string, error) {
 	is2D := ""
 
@@ -577,6 +606,13 @@ func GetGeospatialData(gd *GeoData, fs filestore.FileStore, geomFilePath string,
 			} else if aType == "-1" {
 				f.TwoDAreas = append(f.TwoDAreas, storageAreaFeature)
 			}
+		case strings.HasPrefix(line, "Storage Area 2D Points="):
+			storageAreaFeature, err := getMeshArea(sc, transform)
+			if err != nil {
+				return errors.Wrap(err, 0)
+			}
+			f.Mesh = append(f.Mesh, storageAreaFeature)
+
 		case strings.HasPrefix(line, "Type RM Length L Ch R = 1"):
 			xsFeature, bankLayer, err := getXSBanks(sc, transform, riverReachName)
 			if err != nil {
