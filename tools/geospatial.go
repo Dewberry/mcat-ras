@@ -12,6 +12,7 @@ import (
 	"github.com/USACE/filestore"
 	"github.com/dewberry/gdal"
 	"github.com/go-errors/errors" // warning: replaces standard errors
+	"github.com/pzsz/voronoi"
 )
 
 // GeoData ...
@@ -366,32 +367,133 @@ func getArea(sc *bufio.Scanner, transform gdal.CoordinateTransform) (VectorFeatu
 	return feature, is2D, nil
 }
 
-func getMeshArea(sc *bufio.Scanner, transform gdal.CoordinateTransform) (VectorFeature, error) {
-	feature := VectorFeature{FeatureName: strings.TrimSpace(strings.Split(rightofEquals(sc.Text()), ",")[0])}
+func validVoronoiBound(point [2]float64, bbox voronoi.BBox) bool {
+	return point[0] > bbox.Xl && point[0] < bbox.Xr && point[1] > bbox.Yt && point[1] < bbox.Yb
+}
+
+func getConvertedDist(epsilon float64, destinationCRS int) float64 {
+
+	srs := gdal.CreateSpatialReference("")
+	srs.FromEPSG(4326)
+	sourceCRS, err := srs.ToProj4()
+	if err != nil {
+		fmt.Println("ERROR")
+		fmt.Println(err)
+	}
+
+	transform, err := getTransform(sourceCRS, destinationCRS)
+
+	conversionPoints := [2]gdal.Geometry{gdal.Create(gdal.GT_Point), gdal.Create(gdal.GT_Point)}
+	conversionPoints[0].AddPoint2D(-75.000, 35.000)
+	conversionPoints[1].AddPoint2D(-75.000+epsilon, 35.000)
+	fmt.Println(conversionPoints[0].ToWKT())
+	fmt.Println(conversionPoints[1].ToWKT())
+	conversionPoints[0].Transform(transform)
+	conversionPoints[1].Transform(transform)
+	fmt.Println(conversionPoints[0].ToWKT())
+	fmt.Println(conversionPoints[1].ToWKT())
+	fmt.Println(conversionPoints[0].Distance(conversionPoints[1]))
+
+	return conversionPoints[0].Distance(conversionPoints[1])
+}
+
+func getMeshArea(sc *bufio.Scanner, transform gdal.CoordinateTransform, allowedDist float64) ([]VectorFeature, error) {
+	features := []VectorFeature{
+		VectorFeature{FeatureName: "mesh_points"},
+		VectorFeature{FeatureName: "mesh_voronoi"},
+		VectorFeature{FeatureName: "mesh_convex"},
+	}
 
 	xyPairs, err := getDataPairsfromTextBlock("Storage Area 2D Points=", sc, 64, 16)
 	if err != nil {
-		return feature, errors.Wrap(err, 0)
+		return features, errors.Wrap(err, 0)
 	}
 
-	fmt.Println(len(xyPairs))
-	xyLineString := gdal.Create(gdal.GT_LineString)
-	for _, pair := range xyPairs {
-		xyLineString.AddPoint2D(pair[0], pair[1])
+	multipoint := gdal.Create(gdal.GT_MultiPoint) // for multipoint
+	vertices := voronoi.Vertices{}                // for voronoi
+
+	for _, point := range xyPairs {
+		// Multipoint creation
+		xyPoint := gdal.Create(gdal.GT_Point)
+		xyPoint.AddPoint2D(point[0], point[1])
+		xyPoint.Transform(transform)
+		// This is a temporary fix since the x and y values need to be flipped
+		yxPoint := flipXYPoint(xyPoint)
+
+		err = multipoint.AddGeometry(yxPoint)
+		if err != nil {
+			return features, errors.Wrap(err, 0)
+		}
+
+		// Voronoi Vertex population
+		vertex := voronoi.Vertex{X: yxPoint.X(0), Y: yxPoint.Y(0)}
+		vertices = append(vertices, vertex)
 	}
 
-	xyLineString.Transform(transform)
-	// This is a temporary fix since the x and y values need to be flipped:
-	yxLineString := flipXYLineString(xyLineString)
+	convexHull := multipoint.ConvexHull()
+	bounds := convexHull.Envelope()
 
-	multiLineString := yxLineString.ForceToMultiLineString()
+	bbox := voronoi.NewBBox(bounds.MinX(), bounds.MaxX(), bounds.MinY(), bounds.MaxY())
+	diagram := voronoi.ComputeDiagram(vertices, bbox, false)
 
-	wkb, err := multiLineString.ToWKB()
-	if err != nil {
-		return feature, errors.Wrap(err, 0)
+	// voronoiMultiPolygon := gdal.Create(gdal.GT_MultiPolygon)
+	// for _, cell := range diagram.Cells {
+	// 	centerPoint := gdal.Create(gdal.GT_Point)
+	// 	centerPoint.AddPoint2D(cell.Site.X, cell.Site.Y)
+
+	// 	voronoiRing := gdal.Create(gdal.GT_LinearRing)
+	// 	firstPoint := gdal.Create(gdal.GT_Point)
+	// 	for ind, hedge := range cell.Halfedges {
+	// 		if ind == 0 {
+	// 			firstPoint.AddPoint2D(hedge.GetEndpoint().X, hedge.GetEndpoint().Y)
+	// 		}
+	// 		point := gdal.Create(gdal.GT_Point)
+	// 		point.AddPoint2D(hedge.GetEndpoint().X, hedge.GetEndpoint().Y)
+
+	// 		if validVoronoiBound([2]float64{hedge.GetEndpoint().X, hedge.GetEndpoint().Y}, bbox) && centerPoint.Distance(point) <= allowedDist {
+	// 			voronoiRing.AddPoint2D(hedge.GetEndpoint().X, hedge.GetEndpoint().Y)
+	// 		}
+
+	// 	}
+	// 	voronoiRing.AddPoint2D(cell.Halfedges[0].GetEndpoint().X, cell.Halfedges[0].GetEndpoint().Y)
+	// 	voronoiRing.CloseRings()
+	// 	fmt.Println(voronoiRing.ToWKT())
+	// 	voronoiMultiPolygon.AddGeometry(voronoiRing.ForceToPolygon())
+	// }
+
+	voronoiMultiLineString := gdal.Create(gdal.GT_MultiLineString)
+	for i, edge := range diagram.Edges {
+		lineString := gdal.Create(gdal.GT_LineString)
+		vStart := edge.Va.Vertex
+		vEnd := edge.Vb.Vertex
+
+		lineString.AddPoint2D(vStart.X, vStart.Y)
+		lineString.AddPoint2D(vEnd.X, vEnd.Y)
+
+		// lineStringBounds := lineString.Envelope()
+
+		if convexHull.Contains(lineString) {
+			voronoiMultiLineString.AddGeometry(lineString)
+		} else {
+			fmt.Println("REJECTED")
+		}
+
+		lineString.Destroy()
+
+		if i == -1 {
+			break
+		}
 	}
-	feature.Geometry = wkb
-	return feature, nil
+
+	for ind, geom := range []gdal.Geometry{multipoint, voronoiMultiLineString, convexHull} {
+		wkb, err := geom.ToWKB()
+		if err != nil {
+			return features, errors.Wrap(err, 0)
+		}
+		features[ind].Geometry = wkb
+	}
+
+	return features, nil
 }
 
 func getAreaType(sc *bufio.Scanner) (string, error) {
@@ -607,11 +709,14 @@ func GetGeospatialData(gd *GeoData, fs filestore.FileStore, geomFilePath string,
 				f.TwoDAreas = append(f.TwoDAreas, storageAreaFeature)
 			}
 		case strings.HasPrefix(line, "Storage Area 2D Points="):
-			storageAreaFeature, err := getMeshArea(sc, transform)
+			epsilon := 1e-1
+			// alloweDist := getConvertedDist(epsilon, destinationCRS)
+
+			meshFeatures, err := getMeshArea(sc, transform, epsilon)
 			if err != nil {
 				return errors.Wrap(err, 0)
 			}
-			f.Mesh = append(f.Mesh, storageAreaFeature)
+			f.Mesh = append(f.Mesh, meshFeatures...)
 
 		case strings.HasPrefix(line, "Type RM Length L Ch R = 1"):
 			xsFeature, bankLayer, err := getXSBanks(sc, transform, riverReachName)

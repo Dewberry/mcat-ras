@@ -17,6 +17,7 @@ require (
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/labstack/echo/v4 v4.3.0
 	github.com/mattn/go-isatty v0.0.13 // indirect
+	github.com/pzsz/voronoi v0.0.0-20130609164533-4314be88c79f // indirect
 	github.com/shopspring/decimal v1.2.0 // indirect
 	github.com/swaggo/swag v1.7.0
 	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e // indirect
