@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/USACE/filestore v0.1.4
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
-	github.com/dewberry/gdal v0.3.3-0.20230807174821-eb1cc81ae3f4
+	github.com/dewberry/gdal v0.3.3-0.20230807180726-5bb7fdc4d01b
 	github.com/go-errors/errors v1.4.1
 	github.com/jackc/pgx v3.6.2+incompatible
 	github.com/jmoiron/sqlx v1.3.4
