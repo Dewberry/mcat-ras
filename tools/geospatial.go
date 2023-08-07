@@ -401,7 +401,7 @@ func getMeshArea(sc *bufio.Scanner, transform gdal.CoordinateTransform, allowedD
 	features := []VectorFeature{
 		VectorFeature{FeatureName: "mesh_points"},
 		VectorFeature{FeatureName: "mesh_voronoi"},
-		VectorFeature{FeatureName: "mesh_convex"},
+		VectorFeature{FeatureName: "mesh_concave"},
 	}
 
 	xyPairs, err := getDataPairsfromTextBlock("Storage Area 2D Points=", sc, 64, 16)
@@ -430,39 +430,14 @@ func getMeshArea(sc *bufio.Scanner, transform gdal.CoordinateTransform, allowedD
 		vertices = append(vertices, vertex)
 	}
 
-	convexHull := multipoint.ConvexHull()
-	bounds := convexHull.Envelope()
+	concaveHull := multipoint.ConcaveHull(.8, false)
+	bounds := concaveHull.Envelope()
 
 	bbox := voronoi.NewBBox(bounds.MinX(), bounds.MaxX(), bounds.MinY(), bounds.MaxY())
 	diagram := voronoi.ComputeDiagram(vertices, bbox, false)
 
-	// voronoiMultiPolygon := gdal.Create(gdal.GT_MultiPolygon)
-	// for _, cell := range diagram.Cells {
-	// 	centerPoint := gdal.Create(gdal.GT_Point)
-	// 	centerPoint.AddPoint2D(cell.Site.X, cell.Site.Y)
-
-	// 	voronoiRing := gdal.Create(gdal.GT_LinearRing)
-	// 	firstPoint := gdal.Create(gdal.GT_Point)
-	// 	for ind, hedge := range cell.Halfedges {
-	// 		if ind == 0 {
-	// 			firstPoint.AddPoint2D(hedge.GetEndpoint().X, hedge.GetEndpoint().Y)
-	// 		}
-	// 		point := gdal.Create(gdal.GT_Point)
-	// 		point.AddPoint2D(hedge.GetEndpoint().X, hedge.GetEndpoint().Y)
-
-	// 		if validVoronoiBound([2]float64{hedge.GetEndpoint().X, hedge.GetEndpoint().Y}, bbox) && centerPoint.Distance(point) <= allowedDist {
-	// 			voronoiRing.AddPoint2D(hedge.GetEndpoint().X, hedge.GetEndpoint().Y)
-	// 		}
-
-	// 	}
-	// 	voronoiRing.AddPoint2D(cell.Halfedges[0].GetEndpoint().X, cell.Halfedges[0].GetEndpoint().Y)
-	// 	voronoiRing.CloseRings()
-	// 	fmt.Println(voronoiRing.ToWKT())
-	// 	voronoiMultiPolygon.AddGeometry(voronoiRing.ForceToPolygon())
-	// }
-
 	voronoiMultiLineString := gdal.Create(gdal.GT_MultiLineString)
-	for i, edge := range diagram.Edges {
+	for _, edge := range diagram.Edges {
 		lineString := gdal.Create(gdal.GT_LineString)
 		vStart := edge.Va.Vertex
 		vEnd := edge.Vb.Vertex
@@ -470,22 +445,13 @@ func getMeshArea(sc *bufio.Scanner, transform gdal.CoordinateTransform, allowedD
 		lineString.AddPoint2D(vStart.X, vStart.Y)
 		lineString.AddPoint2D(vEnd.X, vEnd.Y)
 
-		// lineStringBounds := lineString.Envelope()
-
-		if convexHull.Contains(lineString) {
+		if concaveHull.Contains(lineString) {
 			voronoiMultiLineString.AddGeometry(lineString)
-		} else {
-			fmt.Println("REJECTED")
 		}
-
 		lineString.Destroy()
-
-		if i == -1 {
-			break
-		}
 	}
 
-	for ind, geom := range []gdal.Geometry{multipoint, voronoiMultiLineString, convexHull} {
+	for ind, geom := range []gdal.Geometry{multipoint, voronoiMultiLineString, concaveHull} {
 		wkb, err := geom.ToWKB()
 		if err != nil {
 			return features, errors.Wrap(err, 0)
