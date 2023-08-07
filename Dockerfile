@@ -1,6 +1,6 @@
-FROM osgeo/gdal:alpine-normal-3.2.1 as build
+FROM osgeo/gdal:alpine-normal-3.6.3 as build
 
-COPY --from=golang:1.16.5-alpine3.13 /usr/local/go/ /usr/local/go/
+COPY --from=golang:1.20-alpine /usr/local/go/ /usr/local/go/
 
 RUN apk add --no-cache \
     pkgconfig \
@@ -22,7 +22,7 @@ RUN go build main.go
 ENTRYPOINT CompileDaemon --build="go build main.go" --command=./main
 
 
-FROM osgeo/gdal:alpine-normal-3.2.1 as local
+FROM osgeo/gdal:alpine-normal-3.6.3 as local
 
 COPY --from=build /app/main /app/main
 
@@ -36,7 +36,7 @@ RUN rm HEC-RAS_62_Example_Projects.zip
 ENTRYPOINT /app/main
 
 
-FROM osgeo/gdal:alpine-normal-3.2.1 as prod
+FROM osgeo/gdal:alpine-normal-3.6.3 as prod
 
 COPY --from=build /app/main /app/main
 
