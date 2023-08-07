@@ -430,7 +430,7 @@ func getMeshArea(sc *bufio.Scanner, transform gdal.CoordinateTransform, allowedD
 		vertices = append(vertices, vertex)
 	}
 
-	concaveHull := multipoint.ConcaveHull(.8, false)
+	concaveHull := multipoint.ConcaveHull(.02, false)
 	bounds := concaveHull.Envelope()
 
 	bbox := voronoi.NewBBox(bounds.MinX(), bounds.MaxX(), bounds.MinY(), bounds.MaxY())
