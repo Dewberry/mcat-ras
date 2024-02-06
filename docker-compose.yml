@@ -10,9 +10,9 @@ services:
     container_name: mcat-ras-api
     image: mcat-ras-api
     build:
-      target: build
+      # target: build
       # target: local
-      # target: prod
+      target: prod
       context: ./
     volumes:
       - ./:/app
