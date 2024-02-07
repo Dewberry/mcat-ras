@@ -27,12 +27,12 @@ COPY --from=build /app/main /app/main
 
 RUN wget https://github.com/HydrologicEngineeringCenter/hec-downloads/releases/download/1.0.23/HEC-RAS_62_Example_Projects.zip
 
-# RUN unzip HEC-RAS_62_Example_Projects.zip
-# RUN mkdir mcat-ras-testing
-# RUN mv /Example_Projects/ /mcat-ras-testing
-# RUN rm HEC-RAS_62_Example_Projects.zip
+RUN unzip HEC-RAS_62_Example_Projects.zip
+RUN mkdir mcat-ras-testing
+RUN mv /Example_Projects/ /mcat-ras-testing
+RUN rm HEC-RAS_62_Example_Projects.zip
 
-# ENTRYPOINT /app/main
+ENTRYPOINT /app/main
 
 FROM ghcr.io/osgeo/gdal:alpine-normal-3.8.3 as prod
 COPY --from=build /app/main /main
