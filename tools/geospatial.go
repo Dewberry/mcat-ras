@@ -208,7 +208,7 @@ func getRiverCenterline(sc *bufio.Scanner, transform gdal.CoordinateTransform) (
 	}
 
 	xyLineString.Transform(transform)
-	// This is a temporary fix since the x and y values need to be flipped:
+	// The x and y values need to be flipped:
 	yxLineString := flipXYLineString(xyLineString)
 
 	multiLineString := yxLineString.ForceToMultiLineString()
@@ -293,7 +293,7 @@ func getXS(sc *bufio.Scanner, transform gdal.CoordinateTransform, riverReachName
 	}
 
 	xyzLineString.Transform(transform)
-	// This is a temporary fix since the x and y values need to be flipped
+	// The x and y values need to be flipped
 	yxzLineString := flipXYLineString25D(xyzLineString)
 
 	multiLineString := yxzLineString.ForceToMultiLineString()
@@ -321,7 +321,7 @@ func getBanks(line string, transform gdal.CoordinateTransform, xsFeature VectorF
 		xyPoint := gdal.Create(gdal.GT_Point)
 		xyPoint.AddPoint2D(bankXY[0], bankXY[1])
 		xyPoint.Transform(transform)
-		// This is a temporary fix since the x and y values need to be flipped
+		// The x and y values need to be flipped
 		yxPoint := flipXYPoint(xyPoint)
 		multiPoint := yxPoint.ForceToMultiPoint()
 		wkb, err := multiPoint.ToWKB()
@@ -353,7 +353,7 @@ func getArea(sc *bufio.Scanner, transform gdal.CoordinateTransform) (VectorFeatu
 	}
 
 	xyLinearRing.Transform(transform)
-	// This is a temporary fix since the x and y values need to be flipped:
+	// The x and y values need to be flipped
 	yxLinearRing := flipXYLinearRing(xyLinearRing)
 
 	yxPolygon := gdal.Create(gdal.GT_Polygon)
@@ -391,7 +391,7 @@ func getMeshArea(sc *bufio.Scanner, transform gdal.CoordinateTransform, allowedD
 		xyPoint := gdal.Create(gdal.GT_Point)
 		xyPoint.AddPoint2D(point[0], point[1])
 		xyPoint.Transform(transform)
-		// This is a temporary fix since the x and y values need to be flipped
+		// The x and y values need to be flipped
 		yxPoint := flipXYPoint(xyPoint)
 
 		err = multipoint.AddGeometry(yxPoint)
@@ -474,7 +474,7 @@ func getBreakLine(sc *bufio.Scanner, transform gdal.CoordinateTransform) (Vector
 	}
 
 	xyLineString.Transform(transform)
-	// This is a temporary fix since the x and y values need to be flipped:
+	// The x and y values need to be flipped
 	yxLineString := flipXYLineString(xyLineString)
 
 	multiLineString := yxLineString.ForceToMultiLineString()
@@ -518,7 +518,7 @@ func getBCLine(sc *bufio.Scanner, transform gdal.CoordinateTransform) (VectorFea
 	}
 
 	xyLineString.Transform(transform)
-	// This is a temporary fix since the x and y values need to be flipped:
+	// The x and y values need to be flipped
 	yxLineString := flipXYLineString(xyLineString)
 
 	multiLineString := yxLineString.ForceToMultiLineString()
@@ -567,7 +567,7 @@ func getConnectionLine(sc *bufio.Scanner, transform gdal.CoordinateTransform) (V
 	}
 
 	xyLineString.Transform(transform)
-	// This is a temporary fix since the x and y values need to be flipped:
+	// The x and y values need to be flipped
 	yxLineString := flipXYLineString(xyLineString)
 
 	multiLineString := yxLineString.ForceToMultiLineString()
