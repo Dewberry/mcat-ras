@@ -1,16 +1,15 @@
 module github.com/Dewberry/mcat-ras
 
-go 1.19
+go 1.21.3
 
 require (
 	github.com/USACE/filestore v0.1.4
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
-	github.com/dewberry/gdal v0.3.3-0.20230807180726-5bb7fdc4d01b
+	github.com/dewberry/gdal v0.3.4
 	github.com/go-errors/errors v1.4.1
 	github.com/jackc/pgx v3.6.2+incompatible
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/labstack/echo/v4 v4.3.0
-	github.com/pzsz/voronoi v0.0.0-20130609164533-4314be88c79f
 	github.com/swaggo/swag v1.7.0
 )
 
