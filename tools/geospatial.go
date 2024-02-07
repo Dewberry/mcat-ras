@@ -371,32 +371,6 @@ func validVoronoiBound(point [2]float64, bbox voronoi.BBox) bool {
 	return point[0] > bbox.Xl && point[0] < bbox.Xr && point[1] > bbox.Yt && point[1] < bbox.Yb
 }
 
-func getConvertedDist(epsilon float64, destinationCRS int) float64 {
-
-	srs := gdal.CreateSpatialReference("")
-	srs.FromEPSG(4326)
-	sourceCRS, err := srs.ToProj4()
-	if err != nil {
-		fmt.Println("ERROR")
-		fmt.Println(err)
-	}
-
-	transform, err := getTransform(sourceCRS, destinationCRS)
-
-	conversionPoints := [2]gdal.Geometry{gdal.Create(gdal.GT_Point), gdal.Create(gdal.GT_Point)}
-	conversionPoints[0].AddPoint2D(-75.000, 35.000)
-	conversionPoints[1].AddPoint2D(-75.000+epsilon, 35.000)
-	fmt.Println(conversionPoints[0].ToWKT())
-	fmt.Println(conversionPoints[1].ToWKT())
-	conversionPoints[0].Transform(transform)
-	conversionPoints[1].Transform(transform)
-	fmt.Println(conversionPoints[0].ToWKT())
-	fmt.Println(conversionPoints[1].ToWKT())
-	fmt.Println(conversionPoints[0].Distance(conversionPoints[1]))
-
-	return conversionPoints[0].Distance(conversionPoints[1])
-}
-
 func getMeshArea(sc *bufio.Scanner, transform gdal.CoordinateTransform, allowedDist float64) ([]VectorFeature, error) {
 	features := []VectorFeature{
 		VectorFeature{FeatureName: "mesh_points"},
@@ -676,8 +650,6 @@ func GetGeospatialData(gd *GeoData, fs filestore.FileStore, geomFilePath string,
 			}
 		case strings.HasPrefix(line, "Storage Area 2D Points="):
 			epsilon := 1e-1
-			// alloweDist := getConvertedDist(epsilon, destinationCRS)
-
 			meshFeatures, err := getMeshArea(sc, transform, epsilon)
 			if err != nil {
 				return errors.Wrap(err, 0)
