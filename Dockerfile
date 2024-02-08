@@ -34,7 +34,6 @@ RUN rm HEC-RAS_62_Example_Projects.zip
 
 ENTRYPOINT /app/main
 
-
 FROM ghcr.io/osgeo/gdal:alpine-normal-3.8.3 as prod
 COPY --from=build /app/main /main
 ENTRYPOINT /main

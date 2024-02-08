@@ -12,6 +12,7 @@ import (
 	"github.com/USACE/filestore"
 	"github.com/dewberry/gdal"
 	"github.com/go-errors/errors" // warning: replaces standard errors
+	"github.com/pzsz/voronoi"
 )
 
 // GeoData ...
@@ -27,6 +28,7 @@ type Features struct {
 	Banks               []VectorFeature
 	StorageAreas        []VectorFeature
 	TwoDAreas           []VectorFeature
+	Mesh                []VectorFeature
 	HydraulicStructures []VectorFeature
 	Connections         []VectorFeature
 	BCLines             []VectorFeature
@@ -206,7 +208,7 @@ func getRiverCenterline(sc *bufio.Scanner, transform gdal.CoordinateTransform) (
 	}
 
 	xyLineString.Transform(transform)
-	// This is a temporary fix since the x and y values need to be flipped:
+	// The x and y values need to be flipped:
 	yxLineString := flipXYLineString(xyLineString)
 
 	multiLineString := yxLineString.ForceToMultiLineString()
@@ -291,7 +293,7 @@ func getXS(sc *bufio.Scanner, transform gdal.CoordinateTransform, riverReachName
 	}
 
 	xyzLineString.Transform(transform)
-	// This is a temporary fix since the x and y values need to be flipped
+	// The x and y values need to be flipped
 	yxzLineString := flipXYLineString25D(xyzLineString)
 
 	multiLineString := yxzLineString.ForceToMultiLineString()
@@ -319,7 +321,7 @@ func getBanks(line string, transform gdal.CoordinateTransform, xsFeature VectorF
 		xyPoint := gdal.Create(gdal.GT_Point)
 		xyPoint.AddPoint2D(bankXY[0], bankXY[1])
 		xyPoint.Transform(transform)
-		// This is a temporary fix since the x and y values need to be flipped
+		// The x and y values need to be flipped
 		yxPoint := flipXYPoint(xyPoint)
 		multiPoint := yxPoint.ForceToMultiPoint()
 		wkb, err := multiPoint.ToWKB()
@@ -351,7 +353,7 @@ func getArea(sc *bufio.Scanner, transform gdal.CoordinateTransform) (VectorFeatu
 	}
 
 	xyLinearRing.Transform(transform)
-	// This is a temporary fix since the x and y values need to be flipped:
+	// The x and y values need to be flipped
 	yxLinearRing := flipXYLinearRing(xyLinearRing)
 
 	yxPolygon := gdal.Create(gdal.GT_Polygon)
@@ -363,6 +365,75 @@ func getArea(sc *bufio.Scanner, transform gdal.CoordinateTransform) (VectorFeatu
 	}
 	feature.Geometry = wkb
 	return feature, is2D, nil
+}
+
+func validVoronoiBound(point [2]float64, bbox voronoi.BBox) bool {
+	return point[0] > bbox.Xl && point[0] < bbox.Xr && point[1] > bbox.Yt && point[1] < bbox.Yb
+}
+
+func getMeshArea(sc *bufio.Scanner, transform gdal.CoordinateTransform, allowedDist float64) ([]VectorFeature, error) {
+	features := []VectorFeature{
+		VectorFeature{FeatureName: "mesh_points"},
+		VectorFeature{FeatureName: "mesh_voronoi"},
+		VectorFeature{FeatureName: "mesh_concave"},
+	}
+
+	xyPairs, err := getDataPairsfromTextBlock("Storage Area 2D Points=", sc, 64, 16)
+	if err != nil {
+		return features, errors.Wrap(err, 0)
+	}
+
+	multipoint := gdal.Create(gdal.GT_MultiPoint) // for multipoint
+	vertices := voronoi.Vertices{}                // for voronoi
+
+	for _, point := range xyPairs {
+		// Multipoint creation
+		xyPoint := gdal.Create(gdal.GT_Point)
+		xyPoint.AddPoint2D(point[0], point[1])
+		xyPoint.Transform(transform)
+		// The x and y values need to be flipped
+		yxPoint := flipXYPoint(xyPoint)
+
+		err = multipoint.AddGeometry(yxPoint)
+		if err != nil {
+			return features, errors.Wrap(err, 0)
+		}
+
+		// Voronoi Vertex population
+		vertex := voronoi.Vertex{X: yxPoint.X(0), Y: yxPoint.Y(0)}
+		vertices = append(vertices, vertex)
+	}
+
+	concaveHull := multipoint.ConcaveHull(.02, false)
+	bounds := concaveHull.Envelope()
+
+	bbox := voronoi.NewBBox(bounds.MinX(), bounds.MaxX(), bounds.MinY(), bounds.MaxY())
+	diagram := voronoi.ComputeDiagram(vertices, bbox, false)
+
+	voronoiMultiLineString := gdal.Create(gdal.GT_MultiLineString)
+	for _, edge := range diagram.Edges {
+		lineString := gdal.Create(gdal.GT_LineString)
+		vStart := edge.Va.Vertex
+		vEnd := edge.Vb.Vertex
+
+		lineString.AddPoint2D(vStart.X, vStart.Y)
+		lineString.AddPoint2D(vEnd.X, vEnd.Y)
+
+		if concaveHull.Contains(lineString) {
+			voronoiMultiLineString.AddGeometry(lineString)
+		}
+		lineString.Destroy()
+	}
+
+	for ind, geom := range []gdal.Geometry{multipoint, voronoiMultiLineString, concaveHull} {
+		wkb, err := geom.ToWKB()
+		if err != nil {
+			return features, errors.Wrap(err, 0)
+		}
+		features[ind].Geometry = wkb
+	}
+
+	return features, nil
 }
 
 func getAreaType(sc *bufio.Scanner) (string, error) {
@@ -403,7 +474,7 @@ func getBreakLine(sc *bufio.Scanner, transform gdal.CoordinateTransform) (Vector
 	}
 
 	xyLineString.Transform(transform)
-	// This is a temporary fix since the x and y values need to be flipped:
+	// The x and y values need to be flipped
 	yxLineString := flipXYLineString(xyLineString)
 
 	multiLineString := yxLineString.ForceToMultiLineString()
@@ -447,7 +518,7 @@ func getBCLine(sc *bufio.Scanner, transform gdal.CoordinateTransform) (VectorFea
 	}
 
 	xyLineString.Transform(transform)
-	// This is a temporary fix since the x and y values need to be flipped:
+	// The x and y values need to be flipped
 	yxLineString := flipXYLineString(xyLineString)
 
 	multiLineString := yxLineString.ForceToMultiLineString()
@@ -496,7 +567,7 @@ func getConnectionLine(sc *bufio.Scanner, transform gdal.CoordinateTransform) (V
 	}
 
 	xyLineString.Transform(transform)
-	// This is a temporary fix since the x and y values need to be flipped:
+	// The x and y values need to be flipped
 	yxLineString := flipXYLineString(xyLineString)
 
 	multiLineString := yxLineString.ForceToMultiLineString()
@@ -577,6 +648,14 @@ func GetGeospatialData(gd *GeoData, fs filestore.FileStore, geomFilePath string,
 			} else if aType == "-1" {
 				f.TwoDAreas = append(f.TwoDAreas, storageAreaFeature)
 			}
+		case strings.HasPrefix(line, "Storage Area 2D Points="):
+			epsilon := 1e-1
+			meshFeatures, err := getMeshArea(sc, transform, epsilon)
+			if err != nil {
+				return errors.Wrap(err, 0)
+			}
+			f.Mesh = append(f.Mesh, meshFeatures...)
+
 		case strings.HasPrefix(line, "Type RM Length L Ch R = 1"):
 			xsFeature, bankLayer, err := getXSBanks(sc, transform, riverReachName)
 			if err != nil {

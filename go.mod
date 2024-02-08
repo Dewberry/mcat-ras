@@ -10,6 +10,7 @@ require (
 	github.com/jackc/pgx v3.6.2+incompatible
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/labstack/echo/v4 v4.3.0
+	github.com/pzsz/voronoi v0.0.0-20130609164533-4314be88c79f
 	github.com/swaggo/swag v1.7.0
 )
 
