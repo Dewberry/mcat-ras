@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"path/filepath"
-	"strings"
 
 	"github.com/Dewberry/mcat-ras/config"
 	"github.com/Dewberry/mcat-ras/tools"
@@ -34,6 +33,11 @@ func GeospatialData(ac *config.APIConfig) echo.HandlerFunc {
 			return c.JSON(http.StatusBadRequest, "Missing query parameter: `definition_file`")
 		}
 
+		projectionFile := c.QueryParam("projection_file")
+		if projectionFile == "" {
+			return c.JSON(http.StatusBadRequest, "Missing query parameter: `projection_file`")
+		}
+
 		if !isAModel(ac.FileStore, definitionFile) {
 			return c.JSON(http.StatusBadRequest, definitionFile+" is not a valid RAS prj file.")
 		}
@@ -42,7 +46,7 @@ func GeospatialData(ac *config.APIConfig) echo.HandlerFunc {
 			return c.JSON(http.StatusBadRequest, definitionFile+" is not geospatial.")
 		}
 
-		data, err := geospatialData(definitionFile, ac.FileStore, ac.DestinationCRS)
+		data, err := geospatialData(definitionFile, projectionFile, ac.FileStore, ac.DestinationCRS)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, SimpleResponse{http.StatusInternalServerError, fmt.Sprintf("Go error encountered: %v", err.Error()), err.(*errors.Error).ErrorStack()})
 		}
@@ -51,7 +55,7 @@ func GeospatialData(ac *config.APIConfig) echo.HandlerFunc {
 	}
 }
 
-func geospatialData(definitionFile string, fs *filestore.FileStore, destinationCRS int) (tools.GeoData, error) {
+func geospatialData(definitionFile string, projectionFile string, fs *filestore.FileStore, destinationCRS int) (tools.GeoData, error) {
 	gd := tools.GeoData{Features: make(map[string]tools.Features), Georeference: destinationCRS}
 
 	mfiles, err := modFiles(definitionFile, *fs)
@@ -59,8 +63,7 @@ func geospatialData(definitionFile string, fs *filestore.FileStore, destinationC
 		return gd, errors.Wrap(err, 0)
 	}
 
-	projecFile := strings.TrimSuffix(definitionFile, ".prj") + ".projection"
-	proj, err := getProjection(*fs, projecFile)
+	proj, err := getProjection(*fs, projectionFile)
 	if err != nil {
 		return gd, errors.Wrap(err, 0)
 	}
