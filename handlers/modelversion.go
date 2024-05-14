@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/Dewberry/mcat-ras/tools"
+	"github.com/Dewberry/s3api/blobstore"
 
 	"github.com/USACE/filestore" // warning: replaces standard errors
 	"github.com/labstack/echo/v4"
@@ -44,22 +45,30 @@ func ModelVersion(fs *filestore.FileStore) echo.HandlerFunc {
 		return c.JSON(http.StatusOK, version)
 	}
 }
-
-func modFiles(definitionFile string, fs filestore.FileStore) ([]string, error) {
+func modFiles(s3ctrl *blobstore.S3Controller, bucket, definitionFile string) ([]string, error) {
 	mFiles := make([]string, 0)
 	prefix := filepath.Dir(definitionFile) + "/"
 
-	files, err := fs.GetDir(prefix, false)
+	result, err := s3ctrl.GetList(bucket, prefix, false)
 	if err != nil {
 		return mFiles, err
 	}
 
-	for _, file := range *files {
-		// get only files that share the same base name or .prj files for projection
-		// rational behind .prj file is that there can be a shp file in the same level of Hec-RAS
-		// providing potential projection
-		if strings.HasPrefix(filepath.Join(file.Path, file.Name), strings.TrimSuffix(definitionFile, "prj")) || filepath.Ext(file.Name) == ".prj" {
-			mFiles = append(mFiles, filepath.Join(file.Path, file.Name))
+	// Process directories
+	for _, cp := range result.CommonPrefixes {
+		dirPath := *cp.Prefix
+		fileName := filepath.Base(dirPath)
+		if strings.HasPrefix(filepath.Join(dirPath, fileName), strings.TrimSuffix(definitionFile, "prj")) {
+			mFiles = append(mFiles, filepath.Join(dirPath, fileName))
+		}
+	}
+
+	// Process files
+	for _, object := range result.Contents {
+		filePath := *object.Key
+		fileName := filepath.Base(filePath)
+		if strings.HasPrefix(filePath, strings.TrimSuffix(definitionFile, "prj")) || filepath.Ext(fileName) == ".prj" {
+			mFiles = append(mFiles, filePath)
 		}
 	}
 

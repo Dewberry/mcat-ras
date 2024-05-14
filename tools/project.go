@@ -2,6 +2,7 @@ package tools
 
 import (
 	"bufio"
+	"bytes"
 	"crypto/sha256"
 	"fmt"
 	"io"
@@ -9,7 +10,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/USACE/filestore"
+	"github.com/Dewberry/s3api/blobstore"
 	"github.com/go-errors/errors" // warning: replaces standard errors
 )
 
@@ -38,17 +39,17 @@ type PrjFileContents struct {
 	Description     string   //`json:"Description"`
 } //
 
-func ReadFirstLine(fs filestore.FileStore, fn string) (string, error) {
-	file, err := fs.GetObject(fn)
+func ReadFirstLine(s3ctrl *blobstore.S3Controller, bucket, fn string) (string, error) {
+	content, err := s3ctrl.FetchObjectContent(bucket, fn) // Use bucket and fn parameters here
 	if err != nil {
-		fmt.Println("Couldnt open the file", fn)
+		fmt.Println("Couldn't open the file", fn)
 		return "", errors.Wrap(err, 0)
 	}
-	defer file.Close()
 
-	reader := bufio.NewReader(file)
+	// Use bytes.NewReader to create a new reader from the byte slice
+	reader := bufio.NewReader(bytes.NewReader(content))
 	line, err := reader.ReadString('\n')
-	if err != nil {
+	if err != nil && err != io.EOF { // Check for EOF as ReadString('\n') may hit EOF before finding a newline
 		return "", errors.Wrap(err, 0)
 	}
 	return rmNewLineChar(line), nil
