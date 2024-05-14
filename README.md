@@ -29,24 +29,6 @@ The MCAT includes:
 
 ### Getting Started
 
----
-
-- Add a .env file to the root level of this directory with the following structure:
-
-For local:
-
-```
-STORE_TYPE='LOCAL'
-```
-
-For S3:
-
-```
-STORE_TYPE='S3'
-AWS_ACCESS_KEY_ID='**************'
-AWS_SECRET_ACCESS_KEY='**************'
-AWS_DEFAULT_REGION='us-east-1'
-S3_BUCKET='******'
 ```
 
 - Select the stage in `docker-compose.yml` file
@@ -82,3 +64,4 @@ _For example: `http://mcat-ras:5600/isamodel?definition_file=models/ras/CHURCH H
 To view docs goto: http://localhost:5600/swagger/index.html
 
 ![](docs/swagger_image.png)
+```

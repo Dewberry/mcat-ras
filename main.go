@@ -23,7 +23,7 @@ func main() {
 	e.Use(middleware.Gzip())
 
 	// HealthCheck
-	e.GET("/ping", handlers.Ping(appConfig.FileStore))
+	e.GET("/ping", appConfig.Bh.Ping)
 
 	// Swagger
 	// e.GET("/swagger/*", echoSwagger.WrapHandler)
