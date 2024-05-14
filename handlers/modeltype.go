@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
-	"github.com/USACE/filestore" // warning: replaces standard errors
+	// warning: replaces standard errors
+	"github.com/Dewberry/s3api/blobstore"
 	"github.com/labstack/echo/v4"
 )
 
@@ -17,15 +19,20 @@ import (
 // @Success 200 {string} string "RAS"
 // @Failure 500 {object} SimpleResponse
 // @Router /modeltype [get]
-func ModelType(fs *filestore.FileStore) echo.HandlerFunc {
+func ModelType(bh *blobstore.BlobHandler) echo.HandlerFunc {
 	return func(c echo.Context) error {
 
 		definitionFile := c.QueryParam("definition_file")
+		bucket := c.QueryParam("bucket")
 		if definitionFile == "" {
 			return c.JSON(http.StatusBadRequest, "Missing query parameter: `definition_file`")
 		}
-
-		if !isAModel(fs, definitionFile) {
+		s3Ctrl, err := bh.GetController(bucket)
+		if err != nil {
+			errMsg := fmt.Errorf("error getting S3 controller: %s", err.Error())
+			return c.JSON(http.StatusInternalServerError, errMsg.Error())
+		}
+		if !isAModel(s3Ctrl, bucket, definitionFile) {
 			return c.JSON(http.StatusBadRequest, definitionFile+" is not a valid RAS prj file.")
 		}
 
