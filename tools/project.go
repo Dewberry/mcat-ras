@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/USACE/filestore"
+	"github.com/Dewberry/s3api/blobstore"
 	"github.com/go-errors/errors" // warning: replaces standard errors
 )
 
@@ -38,8 +38,8 @@ type PrjFileContents struct {
 	Description     string   //`json:"Description"`
 } //
 
-func ReadFirstLine(fs filestore.FileStore, fn string) (string, error) {
-	file, err := fs.GetObject(fn)
+func ReadFirstLine(s3ctrl *blobstore.S3Controller, bucket, fn string) (string, error) {
+	file, err := s3ctrl.FetchObjectContent(bucket, fn)
 	if err != nil {
 		fmt.Println("Couldnt open the file", fn)
 		return "", errors.Wrap(err, 0)

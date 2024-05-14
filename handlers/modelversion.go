@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/Dewberry/mcat-ras/tools"
+	"github.com/Dewberry/s3api/blobstore"
 
 	"github.com/USACE/filestore" // warning: replaces standard errors
 	"github.com/labstack/echo/v4"
@@ -45,11 +46,11 @@ func ModelVersion(fs *filestore.FileStore) echo.HandlerFunc {
 	}
 }
 
-func modFiles(definitionFile string, fs filestore.FileStore) ([]string, error) {
+func modFiles(s3Ctrl *blobstore.S3Controller, bucket, definitionFile string) ([]string, error) {
 	mFiles := make([]string, 0)
 	prefix := filepath.Dir(definitionFile) + "/"
 
-	files, err := fs.GetDir(prefix, false)
+	files, err := tools.GetListWithDetail(s3Ctrl, bucket, prefix, false)
 	if err != nil {
 		return mFiles, err
 	}
