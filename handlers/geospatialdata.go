@@ -9,8 +9,8 @@ import (
 
 	"github.com/Dewberry/mcat-ras/config"
 	"github.com/Dewberry/mcat-ras/tools"
+	"github.com/Dewberry/s3api/blobstore"
 
-	"github.com/USACE/filestore"
 	"github.com/dewberry/gdal"
 	"github.com/go-errors/errors" // warning: replaces standard errors
 	"github.com/labstack/echo/v4"
@@ -30,19 +30,25 @@ func GeospatialData(ac *config.APIConfig) echo.HandlerFunc {
 	return func(c echo.Context) error {
 
 		definitionFile := c.QueryParam("definition_file")
+		bucket := c.QueryParam("bucket")
 		if definitionFile == "" {
 			return c.JSON(http.StatusBadRequest, "Missing query parameter: `definition_file`")
 		}
+		s3Ctrl, err := ac.Bh.GetController(bucket)
+		if err != nil {
+			errMsg := fmt.Errorf("error getting S3 controller: %s", err.Error())
+			return c.JSON(http.StatusInternalServerError, errMsg.Error())
+		}
 
-		if !isAModel(ac.FileStore, definitionFile) {
+		if !isAModel(s3Ctrl, bucket, definitionFile) {
 			return c.JSON(http.StatusBadRequest, definitionFile+" is not a valid RAS prj file.")
 		}
 
-		if !isGeospatial(definitionFile, *ac.FileStore) {
+		if !isGeospatial(s3Ctrl, bucket, definitionFile) {
 			return c.JSON(http.StatusBadRequest, definitionFile+" is not geospatial.")
 		}
 
-		data, err := geospatialData(definitionFile, ac.FileStore, ac.DestinationCRS)
+		data, err := geospatialData(s3Ctrl, bucket, definitionFile, ac.DestinationCRS)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, SimpleResponse{http.StatusInternalServerError, fmt.Sprintf("Go error encountered: %v", err.Error()), err.(*errors.Error).ErrorStack()})
 		}
@@ -51,16 +57,16 @@ func GeospatialData(ac *config.APIConfig) echo.HandlerFunc {
 	}
 }
 
-func geospatialData(definitionFile string, fs *filestore.FileStore, destinationCRS int) (tools.GeoData, error) {
+func geospatialData(s3Ctrl *blobstore.S3Controller, bucket, definitionFile string, destinationCRS int) (tools.GeoData, error) {
 	gd := tools.GeoData{Features: make(map[string]tools.Features), Georeference: destinationCRS}
 
-	mfiles, err := modFiles(definitionFile, *fs)
+	mfiles, err := modFiles(s3Ctrl, bucket, definitionFile)
 	if err != nil {
 		return gd, errors.Wrap(err, 0)
 	}
 
 	projecFile := strings.TrimSuffix(definitionFile, ".prj") + ".projection"
-	proj, err := getProjection(*fs, projecFile)
+	proj, err := getProjection(s3Ctrl, bucket, projecFile)
 	if err != nil {
 		return gd, errors.Wrap(err, 0)
 	}
@@ -73,7 +79,7 @@ func geospatialData(definitionFile string, fs *filestore.FileStore, destinationC
 
 		case tools.RasRE.Geom.MatchString(ext):
 
-			if err := tools.GetGeospatialData(&gd, *fs, fp, proj, destinationCRS); err != nil {
+			if err := tools.GetGeospatialData(&gd, s3Ctrl, bucket, fp, proj, destinationCRS); err != nil {
 				return gd, errors.Wrap(err, 0)
 			}
 
@@ -83,9 +89,9 @@ func geospatialData(definitionFile string, fs *filestore.FileStore, destinationC
 	return gd, nil
 }
 
-func getProjection(fs filestore.FileStore, fn string) (string, error) {
+func getProjection(s3Ctrl *blobstore.S3Controller, bucket, fn string) (string, error) {
 
-	f, err := fs.GetObject(fn)
+	f, err := s3Ctrl.FetchObjectContent(bucket, fn)
 	if err != nil {
 		return "", err
 	}

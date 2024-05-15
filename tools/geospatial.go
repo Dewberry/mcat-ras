@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/USACE/filestore"
+	"github.com/Dewberry/s3api/blobstore"
 	"github.com/dewberry/gdal"
 	"github.com/go-errors/errors" // warning: replaces standard errors
 	"github.com/pzsz/voronoi"
@@ -608,12 +608,12 @@ func getConnArea(sc *bufio.Scanner) (string, string, error) {
 }
 
 // GetGeospatialData ...
-func GetGeospatialData(gd *GeoData, fs filestore.FileStore, geomFilePath string, sourceCRS string, destinationCRS int) error {
+func GetGeospatialData(gd *GeoData, s3Ctrl *blobstore.S3Controller, bucket, geomFilePath string, sourceCRS string, destinationCRS int) error {
 	geomFileName := filepath.Base(geomFilePath)
 	f := Features{}
 	riverReachName := ""
 
-	file, err := fs.GetObject(geomFilePath)
+	file, err := s3Ctrl.FetchObjectContent(bucket, geomFilePath)
 	if err != nil {
 		return errors.Wrap(err, 0)
 	}

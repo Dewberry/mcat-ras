@@ -42,7 +42,7 @@ func getFlowData(rm *RasModel, fn string, wg *sync.WaitGroup) {
 		}
 	}()
 
-	f, err := rm.FileStore.GetObject(fn)
+	f, err := rm.s3Ctrl.FetchObjectContent(rm.Bucket, fn)
 	if err != nil {
 		return
 	}

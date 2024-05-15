@@ -34,8 +34,8 @@ func main() {
 	e.GET("/isamodel", handlers.IsAModel(appConfig.Bh))
 	e.GET("/modeltype", handlers.ModelType(appConfig.Bh))
 	e.GET("/modelversion", handlers.ModelVersion(appConfig.Bh))
-	e.GET("/index", handlers.Index(appConfig.FileStore))
-	e.GET("/isgeospatial", handlers.IsGeospatial(appConfig.FileStore))
+	e.GET("/index", handlers.Index(appConfig.Bh))
+	e.GET("/isgeospatial", handlers.IsGeospatial(appConfig.Bh))
 	e.GET("/geospatialdata", handlers.GeospatialData(appConfig))
 	e.GET("/forcingdata", handlers.ForcingData(appConfig))
 

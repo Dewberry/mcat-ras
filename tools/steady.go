@@ -10,7 +10,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/USACE/filestore"
+	"github.com/Dewberry/s3api/blobstore"
 	"github.com/go-errors/errors"
 )
 
@@ -60,9 +60,9 @@ type StoAreaElevation struct {
 }
 
 // Get Number of Profiles.
-func getNameNumProfiles(fs filestore.FileStore, flowFilePath string) (numProf int, names []string, err error) {
+func getNameNumProfiles(s3Ctrl *blobstore.S3Controller, bucket, flowFilePath string) (numProf int, names []string, err error) {
 
-	file, err := fs.GetObject(flowFilePath)
+	file, err := s3Ctrl.FetchObjectContent(bucket, flowFilePath)
 	if err != nil {
 		return numProf, names, errors.Wrap(err, 0)
 	}
@@ -245,10 +245,10 @@ func getReachBCs(sc *bufio.Scanner, sd *SteadyData) (skipScan bool, err error) {
 }
 
 // Get Forcing Data from steady flow file.
-func getSteadyData(fd *ForcingData, fs filestore.FileStore, flowFilePath string, mu *sync.Mutex) error {
+func getSteadyData(fd *ForcingData, s3Ctrl *blobstore.S3Controller, bucket, flowFilePath string, mu *sync.Mutex) error {
 	flowFileName := filepath.Base(flowFilePath)
 
-	file, err := fs.GetObject(flowFilePath)
+	file, err := s3Ctrl.FetchObjectContent(bucket, flowFilePath)
 	if err != nil {
 		return errors.Wrap(err, 0)
 	}
@@ -257,7 +257,7 @@ func getSteadyData(fd *ForcingData, fs filestore.FileStore, flowFilePath string,
 	// not passing the same scanner because number of Profiles, and names
 	// must be found first before anything else can be done, and they can be anywhere
 	// in .f file
-	numProf, names, err := getNameNumProfiles(fs, flowFilePath)
+	numProf, names, err := getNameNumProfiles(s3Ctrl, bucket, flowFilePath)
 	if err != nil {
 		return errors.Wrap(err, 0)
 	}

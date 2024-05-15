@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/Dewberry/s3api/blobstore"
 	"github.com/USACE/filestore"
 	"github.com/dewberry/gdal"
 	"github.com/go-errors/errors" // warning: replaces standard errors
@@ -113,6 +114,8 @@ type RasModel struct {
 	Type           string
 	Version        string
 	FileStore      filestore.FileStore
+	s3Ctrl         *blobstore.S3Controller
+	Bucket         string
 	ModelDirectory string
 	FileList       []string
 	Metadata       ProjectMetadata
@@ -238,7 +241,7 @@ func (rm *RasModel) GeospatialData(destinationCRS int) (GeoData, error) {
 		gd.Georeference = destinationCRS
 
 		for _, g := range rm.Metadata.GeomFiles {
-			if err := GetGeospatialData(&gd, rm.FileStore, g.Path, sourceCRS, destinationCRS); err != nil {
+			if err := GetGeospatialData(&gd, rm.s3Ctrl, rm.Bucket, g.Path, sourceCRS, destinationCRS); err != nil {
 				return gd, errors.Wrap(err, 0)
 			}
 		}
@@ -252,7 +255,7 @@ func (rm *RasModel) GeospatialData(destinationCRS int) (GeoData, error) {
 func getModelFiles(rm *RasModel) error {
 	prefix := filepath.Dir(rm.Metadata.ProjFilePath) + "/"
 
-	files, err := rm.FileStore.GetDir(prefix, false)
+	files, err := GetListWithDetail(rm.s3Ctrl, rm.Bucket, prefix, false)
 	if err != nil {
 		return errors.Wrap(err, 0)
 	}
@@ -274,7 +277,7 @@ func getProjection(rm *RasModel, fn string, wg *sync.WaitGroup) {
 
 	defer wg.Done()
 
-	f, err := rm.FileStore.GetObject(fn)
+	f, err := rm.s3Ctrl.FetchObjectContent(rm.Bucket, fn)
 	if err != nil {
 		return
 	}
@@ -300,10 +303,10 @@ func getProjection(rm *RasModel, fn string, wg *sync.WaitGroup) {
 }
 
 // NewRasModel ...
-func NewRasModel(key string, fs filestore.FileStore) (*RasModel, error) {
-	rm := RasModel{ModelDirectory: filepath.Dir(key), FileStore: fs, Type: "RAS"}
+func NewRasModel(s3Ctrl *blobstore.S3Controller, bucket, key string) (*RasModel, error) {
+	rm := RasModel{ModelDirectory: filepath.Dir(key), s3Ctrl: s3Ctrl, Bucket: bucket, Type: "RAS"}
 
-	err := verifyPrjPath(key, &rm)
+	err := verifyPrjPath(&rm, key)
 	if err != nil {
 		return &rm, errors.Wrap(err, 0)
 	}

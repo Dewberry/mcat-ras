@@ -8,8 +8,8 @@ import (
 
 	"github.com/Dewberry/mcat-ras/config"
 	"github.com/Dewberry/mcat-ras/tools"
+	"github.com/Dewberry/s3api/blobstore"
 
-	"github.com/USACE/filestore"
 	"github.com/go-errors/errors" // warning: replaces standard errors
 	"github.com/labstack/echo/v4"
 )
@@ -28,15 +28,16 @@ func ForcingData(ac *config.APIConfig) echo.HandlerFunc {
 	return func(c echo.Context) error {
 
 		definitionFile := c.QueryParam("definition_file")
+		bucket := c.QueryParam("bucket")
 		if definitionFile == "" {
 			return c.JSON(http.StatusBadRequest, "Missing query parameter: `definition_file`")
 		}
-
-		if !isAModel(ac.FileStore, definitionFile) {
-			return c.JSON(http.StatusBadRequest, definitionFile+" is not a valid RAS prj file.")
+		s3Ctrl, err := ac.Bh.GetController(bucket)
+		if err != nil {
+			errMsg := fmt.Errorf("error getting S3 controller: %s", err.Error())
+			return c.JSON(http.StatusInternalServerError, errMsg.Error())
 		}
-
-		data, err := forcingData(definitionFile, ac.FileStore)
+		data, err := forcingData(s3Ctrl, bucket, definitionFile)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, SimpleResponse{http.StatusInternalServerError, fmt.Sprintf("Go error encountered: %v", err.Error()), err.(*errors.Error).ErrorStack()})
 		}
@@ -45,13 +46,13 @@ func ForcingData(ac *config.APIConfig) echo.HandlerFunc {
 	}
 }
 
-func forcingData(definitionFile string, fs *filestore.FileStore) (tools.ForcingData, error) {
+func forcingData(s3Ctrl *blobstore.S3Controller, bucket, definitionFile string) (tools.ForcingData, error) {
 	fd := tools.ForcingData{
 		Steady:   make(map[string]tools.SteadyData),
 		Unsteady: make(map[string]tools.UnsteadyData),
 	}
 
-	mfiles, err := modFiles(definitionFile, *fs)
+	mfiles, err := modFiles(s3Ctrl, bucket, definitionFile)
 	if err != nil {
 		return fd, errors.Wrap(err, 0)
 	}
@@ -68,7 +69,7 @@ func forcingData(definitionFile string, fs *filestore.FileStore) (tools.ForcingD
 	var mu sync.Mutex
 
 	for _, fp := range fFiles {
-		go tools.GetForcingData(&fd, *fs, fp, c, &mu)
+		go tools.GetForcingData(&fd, s3Ctrl, bucket, fp, c, &mu)
 	}
 
 	for i := 0; i < len(fFiles); i++ {

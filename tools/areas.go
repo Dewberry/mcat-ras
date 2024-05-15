@@ -25,7 +25,7 @@ func getAreasData(rm *RasModel, fn string, i int) (string, interface{}, error) {
 	var name, is2D string
 	var numCells int
 
-	f, err := rm.FileStore.GetObject(fn)
+	f, err := rm.s3Ctrl.FetchObjectContent(rm.Bucket, fn)
 	if err != nil {
 		return "", nil, errors.Wrap(err, 0)
 	}
@@ -83,7 +83,7 @@ areaLoop:
 func getBCLineData(rm *RasModel, fn string, i int) (string, string, error) {
 	var bc string
 
-	f, err := rm.FileStore.GetObject(fn)
+	f, err := rm.s3Ctrl.FetchObjectContent(rm.Bucket, fn)
 	if err != nil {
 		return "", bc, errors.Wrap(err, 0)
 	}

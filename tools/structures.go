@@ -456,7 +456,7 @@ func getGates(nextLine string) (gates, error) {
 func getWeirData(rm *RasModel, fn string, i int) (weirs, error) {
 	weir := weirs{}
 
-	f, err := rm.FileStore.GetObject(fn)
+	f, err := rm.s3Ctrl.FetchObjectContent(rm.Bucket, fn)
 	if err != nil {
 		return weir, errors.Wrap(err, 0)
 
@@ -551,7 +551,7 @@ func getHydraulicStructureData(rm *RasModel, fn string, idx int) (hydraulicStruc
 	cData := culvertData{}
 	wData := weirData{}
 
-	f, err := rm.FileStore.GetObject(fn)
+	f, err := rm.s3Ctrl.FetchObjectContent(rm.Bucket, fn)
 	if err != nil {
 		return structures, errors.Wrap(err, 0)
 

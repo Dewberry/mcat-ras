@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Dewberry/mcat-ras/config"
 	ras "github.com/Dewberry/mcat-ras/tools"
+	"github.com/Dewberry/s3api/blobstore"
 
 	"github.com/go-errors/errors" // warning: replaces standard errors
 	"github.com/jmoiron/sqlx"
@@ -79,7 +79,7 @@ func upsertRiver(tx *sqlx.Tx, river ras.VectorFeature, geometryFileID int) (rive
 // Creates Ras Model object and get Collection ID.
 // Calls upsertModel to add record to database.
 // Expects collection record already exist in collection table.
-func upsertModelInfo(definitionFile string, ac *config.APIConfig, db *sqlx.DB) error {
+func upsertModelInfo(s3Ctrl *blobstore.S3Controller, definitionFile, bucket string, db *sqlx.DB) error {
 	ctx := context.Background()
 	tx, err := db.BeginTxx(ctx, nil)
 	defer tx.Rollback() // necessary so that transaction is not left idle if there are any errors
@@ -95,7 +95,7 @@ func upsertModelInfo(definitionFile string, ac *config.APIConfig, db *sqlx.DB) e
 		return errors.Wrap(err, 0)
 	}
 
-	rm, err := ras.NewRasModel(definitionFile, *ac.FileStore)
+	rm, err := ras.NewRasModel(s3Ctrl, bucket, definitionFile)
 	if err != nil {
 		return errors.Wrap(err, 0)
 	}
@@ -121,7 +121,7 @@ func upsertModelInfo(definitionFile string, ac *config.APIConfig, db *sqlx.DB) e
 // Calls receiver function GeospatialData create geometry features.
 // Add records to multiple tables.
 // Expects model record already exist in model table.
-func upsertModelGeometry(definitionFile string, ac *config.APIConfig, db *sqlx.DB) error {
+func upsertModelGeometry(db *sqlx.DB, s3Ctrl *blobstore.S3Controller, bucket, definitionFile string, destinationCRS int) error {
 	ctx := context.Background()
 	tx, err := db.BeginTxx(ctx, nil)
 	defer tx.Rollback() // necessary so that transaction is not left idle if there are any errors
@@ -138,14 +138,14 @@ func upsertModelGeometry(definitionFile string, ac *config.APIConfig, db *sqlx.D
 		return errors.Wrap(err, 0)
 	}
 
-	rm, err := ras.NewRasModel(definitionFile, *ac.FileStore)
+	rm, err := ras.NewRasModel(s3Ctrl, bucket, definitionFile)
 	if err != nil {
 		return errors.Wrap(err, 0)
 	}
 
 	if rm.IsGeospatial() {
 
-		geodata, err := rm.GeospatialData(ac.DestinationCRS)
+		geodata, err := rm.GeospatialData(destinationCRS)
 		if err != nil {
 			return errors.Wrap(err, 0)
 		}
