@@ -14,6 +14,12 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+type SimpleResponse struct {
+	Status     int
+	Message    string
+	StackTrace string
+}
+
 // ForcingData godoc
 // @Summary Extract forcing data from flow files
 // @Description forcing data from a RAS model given an s3 key

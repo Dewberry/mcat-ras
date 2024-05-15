@@ -44,7 +44,9 @@ func blobstoreInit() *blobstore.BlobHandler {
 			log.Fatalf("could not convert AUTH_LEVEL env variable to integer: %v", err)
 		}
 	}
-	bh, err := blobstore.NewBlobHandler(".env.json", authLvl)
+	envJson := "/app/.env.json"
+
+	bh, err := blobstore.NewBlobHandler(envJson, authLvl)
 	if err != nil {
 		errMsg := fmt.Errorf("failed to initialize a blobhandler %s", err.Error())
 		log.Fatal(errMsg)
