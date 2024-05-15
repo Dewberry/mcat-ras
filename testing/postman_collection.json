@@ -76,7 +76,7 @@
 										"method": "GET",
 										"header": [],
 										"url": {
-											"raw": "http://{{url}}/forcingdata?definition_file=mcat-ras-testing/Example_Projects/2D Unsteady Flow Hydraulics/BaldEagleCrkMulti2D/BaldEagleDamBrk.prj&bucket={{bucket}}",
+											"raw": "{{url}}/forcingdata?definition_file=mcat-ras-testing/Example_Projects/2D Unsteady Flow Hydraulics/BaldEagleCrkMulti2D/BaldEagleDamBrk.prj&bucket={{bucket}}",
 											"protocol": "http",
 											"host": [
 												"{{url}}"
@@ -149,7 +149,7 @@
 										"method": "GET",
 										"header": [],
 										"url": {
-											"raw": "http://{{url}}/forcingdata?definition_file=mcat-ras-testing/mocked-data/bare-minimum-project/BaldEagleDamBrk.prj&bucket={{bucket}}",
+											"raw": "{{url}}/forcingdata?definition_file=mcat-ras-testing/mocked-data/bare-minimum-project/BaldEagleDamBrk.prj&bucket={{bucket}}",
 											"protocol": "http",
 											"host": [
 												"{{url}}"
@@ -191,7 +191,7 @@
 										"method": "GET",
 										"header": [],
 										"url": {
-											"raw": "http://{{url}}/forcingdata?definition_file=mcat-ras-testing/mocked-data/no-flow-file/BaldEagleDamBrk.prj&bucket={{bucket}}",
+											"raw": "{{url}}/forcingdata?definition_file=mcat-ras-testing/mocked-data/no-flow-file/BaldEagleDamBrk.prj&bucket={{bucket}}",
 											"protocol": "http",
 											"host": [
 												"{{url}}"
@@ -265,7 +265,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "http://{{url}}/forcingdata?definition_file=mcat-ras-testing/Example_Projects/not-exist.prj&bucket={{bucket}}",
+									"raw": "{{url}}/forcingdata?definition_file=mcat-ras-testing/Example_Projects/not-exist.prj&bucket={{bucket}}",
 									"protocol": "http",
 									"host": [
 										"{{url}}"
@@ -360,7 +360,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "http://{{url}}/isamodel?definition_file=mcat-ras-testing/Example_Projects/2D Unsteady Flow Hydraulics/BaldEagleCrkMulti2D/GISData/MainChannelBanks.prj&bucket={{bucket}}",
+									"raw": "{{url}}/isamodel?definition_file=mcat-ras-testing/Example_Projects/2D Unsteady Flow Hydraulics/BaldEagleCrkMulti2D/GISData/MainChannelBanks.prj&bucket={{bucket}}",
 									"protocol": "http",
 									"host": [
 										"{{url}}"
@@ -413,12 +413,7 @@
 	"variable": [
 		{
 			"key": "url",
-			"value": "localhost:5600",
-			"type": "string"
-		},
-		{
-			"key": "bucket",
-			"value": "",
+			"value": "api:5600",
 			"type": "string"
 		}
 	]

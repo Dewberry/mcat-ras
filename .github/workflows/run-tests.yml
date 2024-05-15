@@ -18,6 +18,7 @@ jobs:
         run: |
           touch .env
           echo INIT_AUTH=0 >> .env
+          echo S3_BUCKET=${{ secrets.S3_BUCKET }} >> .env
           echo S3_MOCK=0 >> .env
       - name: 'Create .env.json file'
         run: |
@@ -40,16 +41,13 @@ jobs:
 
       - name: Check if all 2 containers are alive
         run: |
-          sleep 25s
+          # sleep 25s
           docker ps -a
           if [ $(docker ps | grep mcat-ras- | wc -l) -lt 2 ]
           then
             echo "Less than 2 docker services alive."
             exit 1
           fi
-
-      - name: Show API container logs
-        run: docker logs mcat-ras-api
 
       - name: Show Newman results
         run: |
