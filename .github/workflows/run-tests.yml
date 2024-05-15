@@ -17,11 +17,8 @@ jobs:
       - name: 'Create env file'
         run: |
           touch .env
-          echo STORE_TYPE='S3' >> .env
-          echo AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} >> .env
-          echo AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} >> .env
-          echo AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }} >> .env
-          echo S3_BUCKET=${{ secrets.S3_BUCKET }} >> .env
+          echo INIT_AUTH=0 >> .env
+          echo S3_MOCK=0 >> .env
       - name: 'Create .env.json file'
         run: |
           cat <<EOF > .env.json
@@ -32,7 +29,7 @@ jobs:
                 "AWS_SECRET_ACCESS_KEY": "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
               }
             ],
-            "bucket_allow_list": ["ffrd-pilot", "ffrd-trinity", "${{ secrets.S3_BUCKET }}"]
+            "bucket_allow_list": [ "${{ secrets.S3_BUCKET }}"]
           }
           EOF
       - name: Build the docker-compose stack
@@ -43,13 +40,16 @@ jobs:
 
       - name: Check if all 2 containers are alive
         run: |
-          # sleep 25s
+          sleep 25s
           docker ps -a
           if [ $(docker ps | grep mcat-ras- | wc -l) -lt 2 ]
           then
             echo "Less than 2 docker services alive."
             exit 1
           fi
+
+      - name: Show API container logs
+        run: docker logs mcat-ras-api
 
       - name: Show Newman results
         run: |
@@ -70,7 +70,7 @@ jobs:
 
       - name: Check if Newman is in endless loop
         run: |
-          if [ $(docker ps | mcat-ras-newman | wc -l) -ne 0 ]
+          if [ $(docker ps | grep mcat-ras-newman | wc -l) -ne 0 ]
           then
             echo "Newman still running."
             exit 1
