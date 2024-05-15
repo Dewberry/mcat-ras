@@ -1,9 +1,10 @@
 {
 	"info": {
-		"_postman_id": "d3145bb8-85d0-4989-bc2f-064b2c02a658",
+		"_postman_id": "776e55f5-e919-42df-b84f-1a00301abbf8",
 		"name": "mcat-ras-testing",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "14419355"
+		"_exporter_id": "18773467",
+		"_collection_link": "https://universal-comet-524706.postman.co/workspace/Dewberry~fe115dcb-2f48-4ca3-a618-e462c6ac4255/collection/18773467-776e55f5-e919-42df-b84f-1a00301abbf8?action=share&source=collection_link&creator=18773467"
 	},
 	"item": [
 		{
@@ -66,7 +67,8 @@
 													"    pm.expect(valLen).to.eql(141);\r",
 													"});"
 												],
-												"type": "text/javascript"
+												"type": "text/javascript",
+												"packages": {}
 											}
 										}
 									],
@@ -74,7 +76,7 @@
 										"method": "GET",
 										"header": [],
 										"url": {
-											"raw": "http://{{url}}/forcingdata?definition_file=mcat-ras-testing/Example_Projects/2D Unsteady Flow Hydraulics/BaldEagleCrkMulti2D/BaldEagleDamBrk.prj",
+											"raw": "{{url}}/forcingdata?definition_file=mcat-ras-testing/Example_Projects/2D Unsteady Flow Hydraulics/BaldEagleCrkMulti2D/BaldEagleDamBrk.prj&bucket={{bucket}}",
 											"protocol": "http",
 											"host": [
 												"{{url}}"
@@ -86,6 +88,10 @@
 												{
 													"key": "definition_file",
 													"value": "mcat-ras-testing/Example_Projects/2D Unsteady Flow Hydraulics/BaldEagleCrkMulti2D/BaldEagleDamBrk.prj"
+												},
+												{
+													"key": "bucket",
+													"value": "{{bucket}}"
 												}
 											]
 										}
@@ -134,7 +140,8 @@
 													"    pm.response.to.not.have.jsonBody(\"error\");\r",
 													"});"
 												],
-												"type": "text/javascript"
+												"type": "text/javascript",
+												"packages": {}
 											}
 										}
 									],
@@ -142,7 +149,7 @@
 										"method": "GET",
 										"header": [],
 										"url": {
-											"raw": "http://{{url}}/forcingdata?definition_file=mcat-ras-testing/mocked-data/bare-minimum-project/BaldEagleDamBrk.prj",
+											"raw": "{{url}}/forcingdata?definition_file=mcat-ras-testing/mocked-data/bare-minimum-project/BaldEagleDamBrk.prj&bucket={{bucket}}",
 											"protocol": "http",
 											"host": [
 												"{{url}}"
@@ -154,6 +161,10 @@
 												{
 													"key": "definition_file",
 													"value": "mcat-ras-testing/mocked-data/bare-minimum-project/BaldEagleDamBrk.prj"
+												},
+												{
+													"key": "bucket",
+													"value": "{{bucket}}"
 												}
 											]
 										}
@@ -171,7 +182,8 @@
 													"    pm.expect(pm.response.json()).to.eql({});\r",
 													"});"
 												],
-												"type": "text/javascript"
+												"type": "text/javascript",
+												"packages": {}
 											}
 										}
 									],
@@ -179,7 +191,7 @@
 										"method": "GET",
 										"header": [],
 										"url": {
-											"raw": "http://{{url}}/forcingdata?definition_file=mcat-ras-testing/mocked-data/no-flow-file/BaldEagleDamBrk.prj",
+											"raw": "{{url}}/forcingdata?definition_file=mcat-ras-testing/mocked-data/no-flow-file/BaldEagleDamBrk.prj&bucket={{bucket}}",
 											"protocol": "http",
 											"host": [
 												"{{url}}"
@@ -191,6 +203,10 @@
 												{
 													"key": "definition_file",
 													"value": "mcat-ras-testing/mocked-data/no-flow-file/BaldEagleDamBrk.prj"
+												},
+												{
+													"key": "bucket",
+													"value": "{{bucket}}"
 												}
 											]
 										}
@@ -240,7 +256,8 @@
 											"\r",
 											""
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
@@ -248,7 +265,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "http://{{url}}/forcingdata?definition_file=mcat-ras-testing/Example_Projects/not-exist.prj",
+									"raw": "{{url}}/forcingdata?definition_file=mcat-ras-testing/Example_Projects/not-exist.prj&bucket={{bucket}}",
 									"protocol": "http",
 									"host": [
 										"{{url}}"
@@ -260,6 +277,10 @@
 										{
 											"key": "definition_file",
 											"value": "mcat-ras-testing/Example_Projects/not-exist.prj"
+										},
+										{
+											"key": "bucket",
+											"value": "{{bucket}}"
 										}
 									]
 								}
@@ -330,7 +351,8 @@
 											"});\r",
 											""
 										],
-										"type": "text/javascript"
+										"type": "text/javascript",
+										"packages": {}
 									}
 								}
 							],
@@ -338,7 +360,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "http://{{url}}/isamodel?definition_file=mcat-ras-testing/Example_Projects/2D Unsteady Flow Hydraulics/BaldEagleCrkMulti2D/GISData/MainChannelBanks.prj",
+									"raw": "{{url}}/isamodel?definition_file=mcat-ras-testing/Example_Projects/2D Unsteady Flow Hydraulics/BaldEagleCrkMulti2D/GISData/MainChannelBanks.prj&bucket={{bucket}}",
 									"protocol": "http",
 									"host": [
 										"{{url}}"
@@ -350,6 +372,10 @@
 										{
 											"key": "definition_file",
 											"value": "mcat-ras-testing/Example_Projects/2D Unsteady Flow Hydraulics/BaldEagleCrkMulti2D/GISData/MainChannelBanks.prj"
+										},
+										{
+											"key": "bucket",
+											"value": "{{bucket}}"
 										}
 									]
 								}
@@ -387,7 +413,7 @@
 	"variable": [
 		{
 			"key": "url",
-			"value": "localhost:5600",
+			"value": "api:5600",
 			"type": "string"
 		}
 	]

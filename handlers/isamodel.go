@@ -1,13 +1,14 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"path/filepath"
 	"strings"
 
 	"github.com/Dewberry/mcat-ras/tools"
+	"github.com/Dewberry/s3api/blobstore"
 
-	"github.com/USACE/filestore"
 	"github.com/labstack/echo/v4"
 )
 
@@ -20,24 +21,30 @@ import (
 // @Param definition_file query string true "/models/ras/CHURCH HOUSE GULLY/CHURCH HOUSE GULLY.prj"
 // @Success 200 {object} bool
 // @Router /isamodel [get]
-func IsAModel(fs *filestore.FileStore) echo.HandlerFunc {
+func IsAModel(bh *blobstore.BlobHandler) echo.HandlerFunc {
 	return func(c echo.Context) error {
 
 		definitionFile := c.QueryParam("definition_file")
+		bucket := c.QueryParam("bucket")
 		if definitionFile == "" {
 			return c.JSON(http.StatusBadRequest, "Missing query parameter: `definition_file`")
 		}
+		s3Ctrl, err := bh.GetController(bucket)
+		if err != nil {
+			errMsg := fmt.Errorf("error getting S3 controller: %s", err.Error())
+			return c.JSON(http.StatusInternalServerError, errMsg.Error())
+		}
 
-		return c.JSON(http.StatusOK, isAModel(fs, definitionFile))
+		return c.JSON(http.StatusOK, isAModel(s3Ctrl, bucket, definitionFile))
 	}
 }
 
-func isAModel(fs *filestore.FileStore, definitionFile string) bool {
+func isAModel(s3Ctrl *blobstore.S3Controller, bucket, definitionFile string) bool {
 	if filepath.Ext(definitionFile) != ".prj" {
 		return false
 	}
 
-	firstLine, err := tools.ReadFirstLine(*fs, definitionFile)
+	firstLine, err := tools.ReadFirstLine(s3Ctrl, bucket, definitionFile)
 	if err != nil {
 		return false
 	}
@@ -46,7 +53,7 @@ func isAModel(fs *filestore.FileStore, definitionFile string) bool {
 		return false
 	}
 
-	files, err := modFiles(definitionFile, *fs)
+	files, err := modFiles(s3Ctrl, bucket, definitionFile)
 	if err != nil {
 		return false
 	}

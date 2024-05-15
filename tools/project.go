@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/USACE/filestore"
+	"github.com/Dewberry/s3api/blobstore"
 	"github.com/go-errors/errors" // warning: replaces standard errors
 )
 
@@ -38,10 +38,10 @@ type PrjFileContents struct {
 	Description     string   //`json:"Description"`
 } //
 
-func ReadFirstLine(fs filestore.FileStore, fn string) (string, error) {
-	file, err := fs.GetObject(fn)
+func ReadFirstLine(s3ctrl *blobstore.S3Controller, bucket, fn string) (string, error) {
+	file, err := s3ctrl.FetchObjectContent(bucket, fn)
 	if err != nil {
-		fmt.Println("Couldnt open the file", fn)
+		fmt.Println("Couldnt open the file", fn, " ", err.Error())
 		return "", errors.Wrap(err, 0)
 	}
 	defer file.Close()
@@ -59,13 +59,13 @@ func rmNewLineChar(s string) string {
 }
 
 // verifyPrjPath identifies the .prj file within the passed model directory ...
-func verifyPrjPath(key string, rm *RasModel) error {
+func verifyPrjPath(rm *RasModel, key string) error {
 
 	if filepath.Ext(key) != ".prj" {
 		return errors.Errorf("%s is not a .prj file", key)
 	}
 
-	firstLine, err := ReadFirstLine(rm.FileStore, key)
+	firstLine, err := ReadFirstLine(rm.s3Ctrl, rm.Bucket, key)
 	if err != nil {
 		return errors.Wrap(err, 0)
 	}
@@ -83,7 +83,7 @@ func getPrjData(rm *RasModel) error {
 
 	meta := PrjFileContents{}
 
-	f, err := rm.FileStore.GetObject(rm.Metadata.ProjFilePath)
+	f, err := rm.s3Ctrl.FetchObjectContent(rm.Bucket, rm.Metadata.ProjFilePath)
 	if err != nil {
 		return errors.Wrap(err, 0)
 	}

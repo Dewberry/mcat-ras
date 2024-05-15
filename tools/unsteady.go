@@ -10,7 +10,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/USACE/filestore"
+	"github.com/Dewberry/s3api/blobstore"
 	"github.com/go-errors/errors"
 )
 
@@ -362,7 +362,7 @@ func getBoundaryCondition(sc *bufio.Scanner) (parentType string, parent string, 
 }
 
 // Get Forcing Data from unsteady flow file.
-func getUnsteadyData(fd *ForcingData, fs filestore.FileStore, flowFilePath string, mu *sync.Mutex) error {
+func getUnsteadyData(fd *ForcingData, s3Ctrl *blobstore.S3Controller, bucket, flowFilePath string, mu *sync.Mutex) error {
 	flowFileName := filepath.Base(flowFilePath)
 	ud := UnsteadyData{
 		InitialConditions: "Not Implemented",
@@ -376,7 +376,7 @@ func getUnsteadyData(fd *ForcingData, fs filestore.FileStore, flowFilePath strin
 		ObservedData:      "Not Implemented",
 	}
 
-	file, err := fs.GetObject(flowFilePath)
+	file, err := s3Ctrl.FetchObjectContent(bucket, flowFilePath)
 	if err != nil {
 		return errors.Wrap(err, 0)
 	}

@@ -26,7 +26,7 @@ func getConnectionsData(rm *RasModel, fn string, i int) (string, Connection, err
 	var name string
 	var connection Connection
 
-	f, err := rm.FileStore.GetObject(fn)
+	f, err := rm.s3Ctrl.FetchObjectContent(rm.Bucket, fn)
 	if err != nil {
 		return name, connection, errors.Wrap(err, 0)
 	}

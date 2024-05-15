@@ -17,12 +17,22 @@ jobs:
       - name: 'Create env file'
         run: |
           touch .env
-          echo STORE_TYPE='S3' >> .env
-          echo AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} >> .env
-          echo AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} >> .env
-          echo AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }} >> .env
+          echo INIT_AUTH=0 >> .env
           echo S3_BUCKET=${{ secrets.S3_BUCKET }} >> .env
-
+          echo S3_MOCK=0 >> .env
+      - name: 'Create .env.json file'
+        run: |
+          cat <<EOF > .env.json
+          {
+            "accounts": [
+              {
+                "AWS_ACCESS_KEY_ID": "${{ secrets.AWS_ACCESS_KEY_ID }}",
+                "AWS_SECRET_ACCESS_KEY": "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+              }
+            ],
+            "bucket_allow_list": [ "${{ secrets.S3_BUCKET }}"]
+          }
+          EOF
       - name: Build the docker-compose stack
         run: docker-compose build
 
@@ -44,9 +54,13 @@ jobs:
           sleep 50s
           docker logs mcat-ras-newman
 
+      - name: Clean up .env.json
+        if: always()
+        run: rm -f .env.json
+
       - name: Check Newman Exit Code
         run: |
-          if [ $(docker inspect mcat-ras-newman --format='{{.State.ExitCode}}') -ne 0 ] 
+          if [ $(docker inspect mcat-ras-newman --format='{{.State.ExitCode}}') -ne 0 ]
           then
             echo "Newman failed."
             exit 1
@@ -54,7 +68,7 @@ jobs:
 
       - name: Check if Newman is in endless loop
         run: |
-          if [ $(docker ps | mcat-ras-newman | wc -l) -ne 0 ]
+          if [ $(docker ps | grep mcat-ras-newman | wc -l) -ne 0 ]
           then
             echo "Newman still running."
             exit 1

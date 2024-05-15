@@ -1,9 +1,9 @@
 version: "3.4"
 
 networks:
- app_network:
-   name: mcat-ras-network
-   driver: bridge
+  app_network:
+    name: mcat-ras-network
+    driver: bridge
 
 services:
   api:
@@ -21,18 +21,20 @@ services:
     env_file:
       - ./.env
     networks:
-      - app_network      
+      - app_network
 
   newman:
     image: postman/newman:alpine
     container_name: mcat-ras-newman
-    entrypoint: [""]
+    entrypoint: [ "" ]
     command: >
       sh -c "sleep 30s &&
-             newman run /app/testing/postman_collection.json --env-var "url=api:5600""
+             newman run /app/testing/postman_collection.json --env-var bucket=${S3_BUCKET}"
     volumes:
       - ./testing:/app/testing
     depends_on:
-      - "api"
+      - api
+    environment:
+      - S3_BUCKET=${S3_BUCKET}
     networks:
-      - app_network  
+      - app_network

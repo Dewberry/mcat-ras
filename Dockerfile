@@ -8,6 +8,8 @@ RUN apk add --no-cache \
     libc-dev \
     git
 
+COPY ./.env.json /app/.env.json
+
 ENV GOROOT=/usr/local/go
 ENV GOPATH=/go
 ENV PATH=$PATH:$GOROOT/bin:$GOPATH/bin

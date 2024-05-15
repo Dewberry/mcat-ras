@@ -23,7 +23,7 @@ func main() {
 	e.Use(middleware.Gzip())
 
 	// HealthCheck
-	e.GET("/ping", handlers.Ping(appConfig.FileStore))
+	e.GET("/ping", appConfig.Bh.Ping)
 
 	// Swagger
 	// e.GET("/swagger/*", echoSwagger.WrapHandler)
@@ -31,11 +31,11 @@ func main() {
 	// ras endpoints
 	// these endpoints create a Ras Model struct from files
 	// and then apply receiver functions to the struct to answer desired question
-	e.GET("/isamodel", handlers.IsAModel(appConfig.FileStore))
-	e.GET("/modeltype", handlers.ModelType(appConfig.FileStore))
-	e.GET("/modelversion", handlers.ModelVersion(appConfig.FileStore))
-	e.GET("/index", handlers.Index(appConfig.FileStore))
-	e.GET("/isgeospatial", handlers.IsGeospatial(appConfig.FileStore))
+	e.GET("/isamodel", handlers.IsAModel(appConfig.Bh))
+	e.GET("/modeltype", handlers.ModelType(appConfig.Bh))
+	e.GET("/modelversion", handlers.ModelVersion(appConfig.Bh))
+	e.GET("/index", handlers.Index(appConfig.Bh))
+	e.GET("/isgeospatial", handlers.IsGeospatial(appConfig.Bh))
 	e.GET("/geospatialdata", handlers.GeospatialData(appConfig))
 	e.GET("/forcingdata", handlers.ForcingData(appConfig))
 
