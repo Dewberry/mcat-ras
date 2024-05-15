@@ -1,6 +1,8 @@
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/Dewberry/s3api v0.0.0-20240514180819-b670026d1e32 h1:b0ZCN27GIsof16yBcLTv5tugB7s0M2ujqtv+hExwJdI=
 github.com/Dewberry/s3api v0.0.0-20240514180819-b670026d1e32/go.mod h1:H4Pl0uljt0qvyvJyes4iTaUNAETHB2qVjrSQtZGVsx8=
+github.com/Dewberry/s3api v0.0.0-20240515160421-0cf9397592cf h1:JQ+cLfRCHlzsObs8dUShJQ+aH5d7hxTBBDaoZWC24Sk=
+github.com/Dewberry/s3api v0.0.0-20240515160421-0cf9397592cf/go.mod h1:H4Pl0uljt0qvyvJyes4iTaUNAETHB2qVjrSQtZGVsx8=
 github.com/KyleBanks/depth v1.2.1 h1:5h8fQADFrWtarTdtDudMmGsC7GPbOAu6RVB3ffsVFHc=
 github.com/KyleBanks/depth v1.2.1/go.mod h1:jzSb9d0L43HxTQfT+oSA1EEp2q+ne2uh6XgeJcm8brE=
 github.com/PuerkitoBio/purell v1.1.1 h1:WEQqlqaGbrPkxLJWfBwQmfEAE1Z7ONdDLqrN38tNFfI=
