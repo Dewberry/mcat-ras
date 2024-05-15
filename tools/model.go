@@ -9,7 +9,6 @@ import (
 	"sync"
 
 	"github.com/Dewberry/s3api/blobstore"
-	"github.com/USACE/filestore"
 	"github.com/dewberry/gdal"
 	"github.com/go-errors/errors" // warning: replaces standard errors
 )
@@ -113,7 +112,6 @@ type SupplementalFiles struct {
 type RasModel struct {
 	Type           string
 	Version        string
-	FileStore      filestore.FileStore
 	s3Ctrl         *blobstore.S3Controller
 	Bucket         string
 	ModelDirectory string
