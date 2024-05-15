@@ -33,7 +33,7 @@ func main() {
 	// and then apply receiver functions to the struct to answer desired question
 	e.GET("/isamodel", handlers.IsAModel(appConfig.Bh))
 	e.GET("/modeltype", handlers.ModelType(appConfig.Bh))
-	e.GET("/modelversion", handlers.ModelVersion(appConfig.FileStore))
+	e.GET("/modelversion", handlers.ModelVersion(appConfig.Bh))
 	e.GET("/index", handlers.Index(appConfig.FileStore))
 	e.GET("/isgeospatial", handlers.IsGeospatial(appConfig.FileStore))
 	e.GET("/geospatialdata", handlers.GeospatialData(appConfig))
