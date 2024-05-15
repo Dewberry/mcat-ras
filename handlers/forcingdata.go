@@ -43,6 +43,10 @@ func ForcingData(ac *config.APIConfig) echo.HandlerFunc {
 			errMsg := fmt.Errorf("error getting S3 controller: %s", err.Error())
 			return c.JSON(http.StatusInternalServerError, errMsg.Error())
 		}
+		if !isAModel(s3Ctrl, bucket, definitionFile) {
+			return c.JSON(http.StatusBadRequest, definitionFile+" is not a valid Ras prj file.")
+		}
+
 		data, err := forcingData(s3Ctrl, bucket, definitionFile)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, SimpleResponse{http.StatusInternalServerError, fmt.Sprintf("Go error encountered: %v", err.Error()), err.(*errors.Error).ErrorStack()})
